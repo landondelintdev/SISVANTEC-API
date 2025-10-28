@@ -1,24 +1,22 @@
 // src/controllers/tramiteController.js
 import tramiteService from "../services/tramiteService.js";
 
+/**
+ * Crear un nuevo trámite (respuesta a un formulario)
+ * POST /api/tramites
+ */
 export const crearTramite = async (req, res) => {
   try {
-    const {
-      formularioId,
-      usuarioId,
-      usuarioNombre,
-      respuestas,
-      estado,
-      comentarios,
-    } = req.body;
+    const { formularioId, respuestas, usuarioNombre } = req.body;
+
+    // Usar información del usuario autenticado
+    const usuario = req.user;
 
     const nuevoTramite = await tramiteService.crearTramite({
       formularioId,
-      usuarioId,
-      usuarioNombre,
+      usuarioId: usuario.uid, // ← Usuario autenticado
+      usuarioNombre: usuarioNombre || usuario.nombre,
       respuestas,
-      estado,
-      comentarios,
     });
 
     res.status(201).json({
@@ -36,24 +34,42 @@ export const crearTramite = async (req, res) => {
   }
 };
 
+/**
+ * Obtener todos los trámites (filtrados según rol)
+ * GET /api/tramites
+ */
 export const obtenerTramites = async (req, res) => {
   try {
     const filtros = {};
+    const usuario = req.user;
 
-    if (req.query.municipio) {
-      filtros.municipio = req.query.municipio;
+    // Filtros automáticos según rol
+    if (usuario.rol === "admin") {
+      // Admin solo ve trámites de su municipio
+      filtros.municipio = usuario.municipio;
+    } else if (usuario.rol === "usuario") {
+      // Usuario solo ve sus propios trámites
+      filtros.usuarioId = usuario.uid;
     }
+    // SuperAdmin ve todo
 
-    if (req.query.usuarioId) {
-      filtros.usuarioId = req.query.usuarioId;
-    }
+    // Aplicar filtros adicionales solo si es SuperAdmin o Admin
+    if (usuario.rol === "superadmin" || usuario.rol === "admin") {
+      if (req.query.municipio && usuario.rol === "superadmin") {
+        filtros.municipio = req.query.municipio;
+      }
 
-    if (req.query.formularioId) {
-      filtros.formularioId = req.query.formularioId;
-    }
+      if (req.query.formularioId) {
+        filtros.formularioId = req.query.formularioId;
+      }
 
-    if (req.query.estado) {
-      filtros.estado = req.query.estado;
+      if (req.query.estado) {
+        filtros.estado = req.query.estado;
+      }
+
+      if (req.query.usuarioId && usuario.rol === "superadmin") {
+        filtros.usuarioId = req.query.usuarioId;
+      }
     }
 
     const tramites = await tramiteService.obtenerTramites(filtros);
@@ -74,6 +90,10 @@ export const obtenerTramites = async (req, res) => {
   }
 };
 
+/**
+ * Obtener un trámite por ID
+ * GET /api/tramites/:id
+ */
 export const obtenerTramitePorId = async (req, res) => {
   try {
     const { id } = req.params;
@@ -102,6 +122,10 @@ export const obtenerTramitePorId = async (req, res) => {
   }
 };
 
+/**
+ * Actualizar un trámite
+ * PUT /api/tramites/:id
+ */
 export const actualizarTramite = async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,6 +159,10 @@ export const actualizarTramite = async (req, res) => {
   }
 };
 
+/**
+ * Eliminar un trámite permanentemente
+ * DELETE /api/tramites/:id
+ */
 export const eliminarTramite = async (req, res) => {
   try {
     const { id } = req.params;
@@ -164,9 +192,19 @@ export const eliminarTramite = async (req, res) => {
   }
 };
 
+/**
+ * Obtener estadísticas de trámites
+ * GET /api/tramites/estadisticas
+ */
 export const obtenerEstadisticas = async (req, res) => {
   try {
-    const { municipio } = req.query;
+    const usuario = req.user;
+    let municipio = req.query.municipio;
+
+    // Admin solo puede ver estadísticas de su municipio
+    if (usuario.rol === "admin") {
+      municipio = usuario.municipio;
+    }
 
     const estadisticas = await tramiteService.obtenerEstadisticas(municipio);
 
@@ -174,6 +212,7 @@ export const obtenerEstadisticas = async (req, res) => {
       success: true,
       message: "Estadísticas obtenidas correctamente",
       data: estadisticas,
+      municipio: municipio || "Todos",
     });
   } catch (error) {
     console.error("❌ Error en obtenerEstadisticas:", error);

@@ -10,6 +10,7 @@ import "./config/firebase.js";
 // Importar rutas
 import formularioRoutes from "./routes/formularioRoutes.js";
 import tramiteRoutes from "./routes/tramiteRoutes.js"; // ← NUEVO
+import authRoutes from "./routes/authRoutes.js"; // ← NUEVO
 
 // =========================================
 // CONFIGURACIÓN INICIAL
@@ -59,8 +60,9 @@ app.get("/health", (req, res) => {
 // =========================================
 // RUTAS DE LA API
 // =========================================
+app.use("/api/auth", authRoutes); // ← NUEVO
 app.use("/api/formularios", formularioRoutes);
-app.use("/api/tramites", tramiteRoutes); // ← NUEVO
+app.use("/api/tramites", tramiteRoutes);
 
 // =========================================
 // MANEJO DE RUTAS NO ENCONTRADAS (404)
@@ -93,6 +95,8 @@ app.use((err, req, res, next) => {
 // =========================================
 // INICIAR SERVIDOR
 // =========================================
+// Actualizar el console.log de rutas disponibles
+
 app.listen(PORT, () => {
   console.log("=".repeat(50));
   console.log("🚀 Servidor SISVANTEC API iniciado");
@@ -101,6 +105,13 @@ app.listen(PORT, () => {
   console.log(`🌍 Entorno: ${process.env.NODE_ENV || "development"}`);
   console.log(`⏰ Hora de inicio: ${new Date().toLocaleString()}`);
   console.log("\n📋 Rutas disponibles:");
+  console.log("   --- Autenticación ---");
+  console.log(`   POST   http://localhost:${PORT}/api/auth/registro`);
+  console.log(`   POST   http://localhost:${PORT}/api/auth/login`);
+  console.log(`   GET    http://localhost:${PORT}/api/auth/perfil`);
+  console.log(`   GET    http://localhost:${PORT}/api/auth/usuarios`);
+  console.log(`   PUT    http://localhost:${PORT}/api/auth/usuarios/:uid`);
+  console.log(`   DELETE http://localhost:${PORT}/api/auth/usuarios/:uid`);
   console.log("   --- Formularios ---");
   console.log(`   POST   http://localhost:${PORT}/api/formularios`);
   console.log(`   GET    http://localhost:${PORT}/api/formularios`);

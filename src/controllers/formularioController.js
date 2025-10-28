@@ -1,18 +1,22 @@
 // src/controllers/formularioController.js
 import formularioService from "../services/formularioService.js";
 
+// src/controllers/formularioController.js
+
 export const crearFormulario = async (req, res) => {
   try {
-    const { titulo, descripcion, campos, activo, creadoPor, municipio } =
-      req.body;
+    const { titulo, descripcion, campos, activo, municipio } = req.body;
+
+    // Usar información del usuario autenticado
+    const usuario = req.user;
 
     const nuevoFormulario = await formularioService.crearFormulario({
       titulo,
       descripcion,
       campos,
       activo,
-      creadoPor,
-      municipio,
+      creadoPor: usuario.uid, // ← Usuario autenticado
+      municipio: usuario.rol === "admin" ? usuario.municipio : municipio, // ← Admin usa su municipio
     });
 
     res.status(201).json({
@@ -30,20 +34,33 @@ export const crearFormulario = async (req, res) => {
   }
 };
 
+// Actualizar obtenerFormularios para filtrar según rol
 export const obtenerFormularios = async (req, res) => {
   try {
     const filtros = {};
+    const usuario = req.user;
 
+    // Filtros según rol
+    if (usuario) {
+      if (usuario.rol === "admin") {
+        // Admin solo ve formularios de su municipio
+        filtros.municipio = usuario.municipio;
+      }
+      // SuperAdmin ve todo
+      // Usuario ve todo (solo activos se filtran en el servicio)
+    }
+
+    // Aplicar filtros adicionales de query params
     if (req.query.activo !== undefined) {
       filtros.activo = req.query.activo === "true";
     }
 
-    if (req.query.creadoPor) {
-      filtros.creadoPor = req.query.creadoPor;
+    if (req.query.municipio && usuario?.rol === "superadmin") {
+      filtros.municipio = req.query.municipio;
     }
 
-    if (req.query.municipio) {
-      filtros.municipio = req.query.municipio;
+    if (req.query.creadoPor && usuario?.rol === "superadmin") {
+      filtros.creadoPor = req.query.creadoPor;
     }
 
     const formularios = await formularioService.obtenerFormularios(filtros);
@@ -64,6 +81,7 @@ export const obtenerFormularios = async (req, res) => {
   }
 };
 
+// ... (resto de funciones sin cambios)
 export const obtenerFormularioPorId = async (req, res) => {
   try {
     const { id } = req.params;
