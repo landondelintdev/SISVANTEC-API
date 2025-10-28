@@ -1,0 +1,31 @@
+{
+  "name": "sisvantec-api",
+  "version": "1.0.0",
+  "description": "API REST para gestión de formularios y trámites - SISVANTEC",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test:firestore": "node src/utils/testFirestore.js"
+  },
+  "keywords": [
+    "api",
+    "rest",
+    "firebase",
+    "express"
+  ],
+  "author": "Landon Donovan Delint Alvidrez",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "express-validator": "^7.3.0",
+    "firebase-admin": "^13.5.0",
+    "helmet": "^8.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
